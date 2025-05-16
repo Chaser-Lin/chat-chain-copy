@@ -80,4 +80,4 @@ async def get_response(item: Item):
     
     # 由于 API 存在即时性问题，不能支持历史链
     else:
-        return "API 不支持历史链"
+        return "API 不支持历史链" # api调用的方式不支持历史链，通过gradio界面交互就可以

@@ -8,6 +8,8 @@ from embedding.zhipuai_embedding import ZhipuAIEmbeddings
 from database.create_db import create_db,load_knowledge_db
 from embedding.call_embedding import get_embedding
 
+# 加载向量数据库对象，如果本地持久化目录存在且数据库为空，则会先加载一遍数据
+# 因为支持embedding传参，所以应该对于每个embedding在不同的persist_path分别建向量数据库比较合理
 def get_vectordb(file_path:str=None, persist_path:str=None, embedding = "openai",embedding_key:str=None):
     """
     返回向量数据库对象

@@ -21,6 +21,7 @@ import re
 # 寻找 .env 文件并加载它的内容
 # 这允许您使用 os.environ 来读取在 .env 文件中设置的环境变量
 _ = load_dotenv(find_dotenv())
+# 模型列表最好也改成配置，方便更新
 LLM_MODEL_DICT = {
     "openai": ["gpt-3.5-turbo", "gpt-3.5-turbo-16k-0613", "gpt-3.5-turbo-0613", "gpt-4", "gpt-4-32k"],
     "wenxin": ["ERNIE-Bot", "ERNIE-Bot-4", "ERNIE-Bot-turbo"],
@@ -29,7 +30,7 @@ LLM_MODEL_DICT = {
 }
 
 
-LLM_MODEL_LIST = sum(list(LLM_MODEL_DICT.values()),[])
+LLM_MODEL_LIST = sum(list(LLM_MODEL_DICT.values()),[]) # 把LLM_MODEL_DICT的所有value转为列表["gpt-3.5-turbo", "gpt-3.5-turbo-16k-0613",...,"chatglm_lite"]
 INIT_LLM = "chatglm_std"
 EMBEDDING_MODEL_LIST = ['zhipuai', 'openai', 'm3e']
 INIT_EMBEDDING_MODEL = "m3e"
@@ -40,14 +41,17 @@ DATAWHALE_AVATAR_PATH = "./figures/datawhale_avatar.png"
 AIGC_LOGO_PATH = "./figures/aigc_logo.png"
 DATAWHALE_LOGO_PATH = "./figures/datawhale_logo.png"
 
+# 获取对应平台的模型列表
 def get_model_by_platform(platform):
     return LLM_MODEL_DICT.get(platform, "")
+    
 class Model_center():
     """
     存储问答 Chain 的对象 
 
     - chat_qa_chain_self: 以 (model, embedding) 为键存储的带历史记录的问答链。
     - qa_chain_self: 以 (model, embedding) 为键存储的不带历史记录的问答链。
+    合理, 不同的embedding检索逻辑不可复用, 但是model不同也没关系, 可以考虑只用embedding作为键
     """
     def __init__(self):
         self.chat_qa_chain_self = {}
@@ -60,7 +64,7 @@ class Model_center():
         if question == None or len(question) < 1:
             return "", chat_history
         try:
-            if (model, embedding) not in self.chat_qa_chain_self:
+            if (model, embedding) not in self.chat_qa_chain_self: # 内存中不存在对应模型的实例，需要加载一个
                 self.chat_qa_chain_self[(model, embedding)] = Chat_QA_chain_self(model=model, temperature=temperature,
                                                                                     top_k=top_k, chat_history=chat_history, file_path=file_path, persist_path=persist_path, embedding=embedding)
             chain = self.chat_qa_chain_self[(model, embedding)]
@@ -85,6 +89,7 @@ class Model_center():
         except Exception as e:
             return e, chat_history
 
+    # 把所有模型的历史记录都清除
     def clear_history(self):
         if len(self.chat_qa_chain_self) > 0:
             for chain in self.chat_qa_chain_self.values():
@@ -116,7 +121,7 @@ def format_chat_prompt(message, chat_history):
     return prompt
 
 
-
+# 不使用知识库内容，直接查询GPT
 def respond(message, chat_history, llm, history_len=3, temperature=0.1, max_tokens=2048):
     """
     该函数用于生成机器人的回复。
@@ -153,6 +158,7 @@ model_center = Model_center()
 
 block = gr.Blocks()
 with block as demo:
+    # 界面第一行
     with gr.Row(equal_height=True):           
         gr.Image(value=AIGC_LOGO_PATH, scale=1, min_width=10, show_label=False, show_download_button=False, container=False)
    
@@ -161,8 +167,9 @@ with block as demo:
                 <center>LLM-UNIVERSE</center>
                 """)
         gr.Image(value=DATAWHALE_LOGO_PATH, scale=1, min_width=10, show_label=False, show_download_button=False, container=False)
-
+    # 界面第二行
     with gr.Row():
+        # 界面第二行第一列，宽度占比4/5
         with gr.Column(scale=4):
             chatbot = gr.Chatbot(height=400, show_copy_button=True, show_share_button=True, avatar_images=(AIGC_AVATAR_PATH, DATAWHALE_AVATAR_PATH))
             # 创建一个文本框组件，用于输入 prompt。
@@ -177,28 +184,30 @@ with block as demo:
                 # 创建一个清除按钮，用于清除聊天机器人组件的内容。
                 clear = gr.ClearButton(
                     components=[chatbot], value="Clear console")
-
+        # 界面第二行第二列，宽度占比1/5
         with gr.Column(scale=1):
             file = gr.File(label='请选择知识库目录', file_count='directory',
-                           file_types=['.txt', '.md', '.docx', '.pdf'])
+                           file_types=['.txt', '.md', '.docx', '.pdf']) # 上传文件按钮
+            # 该列下的第二行
             with gr.Row():
-                init_db = gr.Button("知识库文件向量化")
+                init_db = gr.Button("知识库文件向量化") # 知识库向量化按钮
             model_argument = gr.Accordion("参数配置", open=False)
             with model_argument:
+                # 滑动条控制temperature
                 temperature = gr.Slider(0,
                                         1,
                                         value=0.01,
                                         step=0.01,
                                         label="llm temperature",
                                         interactive=True)
-
+                # 滑动条控制top_k
                 top_k = gr.Slider(1,
                                   10,
                                   value=3,
                                   step=1,
                                   label="vector db search top k",
                                   interactive=True)
-
+                # 滑动条控制历史记录长度
                 history_len = gr.Slider(0,
                                         5,
                                         value=3,
@@ -208,12 +217,13 @@ with block as demo:
 
             model_select = gr.Accordion("模型选择")
             with model_select:
+                # llm模型选择下拉框
                 llm = gr.Dropdown(
                     LLM_MODEL_LIST,
                     label="large language model",
                     value=INIT_LLM,
                     interactive=True)
-
+                # embedding模型选择下拉框
                 embeddings = gr.Dropdown(EMBEDDING_MODEL_LIST,
                                          label="Embedding model",
                                          value=INIT_EMBEDDING_MODEL)
@@ -244,7 +254,7 @@ with block as demo:
     3. 使用中如果出现异常，将会在文本输入框进行展示，请不要惊慌。 <br>
     """)
 # threads to consume the request
-gr.close_all()
+gr.close_all() # 关闭所有已存在的 Gradio 应用实例，防止端口冲突。在启动新的 Gradio 应用之前，确保没有其他实例在运行。
 # 启动新的 Gradio 应用，设置分享功能为 True，并使用环境变量 PORT1 指定服务器端口。
 # demo.launch(share=True, server_port=int(os.environ['PORT1']))
 # 直接启动

@@ -15,34 +15,38 @@ from langchain.vectorstores import Chroma
 DEFAULT_DB_PATH = "./knowledge_db"
 DEFAULT_PERSIST_PATH = "./vector_db"
 
-
+# 获取路径下的文件列表
 def get_files(dir_path):
     file_list = []
     for filepath, dirnames, filenames in os.walk(dir_path):
         for filename in filenames:
+            # os.path.join 获取文件的绝对路径？
             file_list.append(os.path.join(filepath, filename))
     return file_list
 
 
 def file_loader(file, loaders):
+    # 这个是什么意思？
     if isinstance(file, tempfile._TemporaryFileWrapper):
         file = file.name
+    # 如果不是文件，则递归加载目录下的文件
     if not os.path.isfile(file):
         [file_loader(os.path.join(file, f), loaders) for f in  os.listdir(file)]
         return
     file_type = file.split('.')[-1]
     if file_type == 'pdf':
-        loaders.append(PyMuPDFLoader(file))
+        loaders.append(PyMuPDFLoader(file)) # pdf加载器
     elif file_type == 'md':
         pattern = r"不存在|风控"
         match = re.search(pattern, file)
+        # 正则匹配没风险的文件才会加载
         if not match:
-            loaders.append(UnstructuredMarkdownLoader(file))
+            loaders.append(UnstructuredMarkdownLoader(file)) # md加载器
     elif file_type == 'txt':
         loaders.append(UnstructuredFileLoader(file))
     return
 
-
+# 根据传入数据和embedding模型创建向量数据库，过滤非法的模型传参
 def create_db_info(files=DEFAULT_DB_PATH, embeddings="openai", persist_directory=DEFAULT_PERSIST_PATH):
     if embeddings == 'openai' or embeddings == 'm3e' or embeddings =='zhipuai':
         vectordb = create_db(files, persist_directory, embeddings)
@@ -74,6 +78,7 @@ def create_db(files=DEFAULT_DB_PATH, persist_directory=DEFAULT_PERSIST_PATH, emb
     text_splitter = RecursiveCharacterTextSplitter(
         chunk_size=500, chunk_overlap=150)
     split_docs = text_splitter.split_documents(docs)
+    # 根据embedding名称获取本地封装的embedding模型实例
     if type(embeddings) == str:
         embeddings = get_embedding(embedding=embeddings)
     # 定义持久化路径
@@ -85,7 +90,7 @@ def create_db(files=DEFAULT_DB_PATH, persist_directory=DEFAULT_PERSIST_PATH, emb
     persist_directory=persist_directory  # 允许我们将persist_directory目录保存到磁盘上
     ) 
 
-    vectordb.persist()
+    vectordb.persist() # 将数据持久化到磁盘
     return vectordb
 
 
@@ -116,6 +121,6 @@ def load_knowledge_db(path, embeddings):
     )
     return vectordb
 
-
+# 只有当该文件作为主程序入口时才会执行，如果文件作为模块导入，则不会执行
 if __name__ == "__main__":
     create_db(embeddings="m3e")

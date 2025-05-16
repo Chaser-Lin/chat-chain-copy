@@ -25,7 +25,7 @@ def remove_urls(text):
     text = re.sub(specific_text_pattern, '', text)
     return text
 
-# 抽取md中的文本
+# 抽取md中的文本，先转为HTML再用BeautifulSoup解析文本
 def extract_text_from_md(md_content):
     # Convert Markdown to HTML
     html = markdown.markdown(md_content)

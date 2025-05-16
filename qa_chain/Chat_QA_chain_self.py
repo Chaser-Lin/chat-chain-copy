@@ -51,6 +51,7 @@ class Chat_QA_chain_self:
         return self.chat_history.clear()
 
     
+    # 什么时候会调用这个方法？
     def change_history_length(self,history_len:int=1):
         """
         保存指定对话轮次的历史记录
@@ -60,7 +61,7 @@ class Chat_QA_chain_self:
         输出：返回最近 history_len 次对话
         """
         n = len(self.chat_history)
-        return self.chat_history[n-history_len:]
+        return self.chat_history[n-history_len:] # n < history_len的时候会不会有问题
 
  
     def answer(self, question:str=None,temperature = None, top_k = 4):

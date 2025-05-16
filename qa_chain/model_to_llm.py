@@ -6,7 +6,7 @@ from llm.zhipuai_llm import ZhipuAILLM
 from langchain.chat_models import ChatOpenAI
 from llm.call_llm import parse_llm_api_key
 
-
+# 根据传入模型名称和参数，返回封装好的对应llm模型实例
 def model_to_llm(model:str=None, temperature:float=0.0, appid:str=None, api_key:str=None,Spark_api_secret:str=None,Wenxin_secret_key:str=None):
         """
         星火：model,temperature,appid,api_key,api_secret

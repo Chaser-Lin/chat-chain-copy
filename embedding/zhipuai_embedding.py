@@ -17,17 +17,17 @@ class ZhipuAIEmbeddings(BaseModel, Embeddings):
     """Zhipuai application apikey"""
 
     @root_validator()
-    def validate_environment(cls, values: Dict) -> Dict:
+    def validate_environment(cls, values: Dict) -> Dict: 
         """
         Validate whether zhipuai_api_key in the environment variables or
         configuration file are available or not.
 
         Args:
-
+            values是包含配置信息的dict必须包含 zhipuai_api_key 这个值
             values: a dictionary containing configuration information, must include the
             fields of zhipuai_api_key
         Returns:
-
+            如果传进的values或者环境变量中都没有 zhipuai_api_key 的值, 则会返回原有values变量
             a dictionary containing configuration information. If zhipuai_api_key
             are not provided in the environment variables or configuration
             file, the original values will be returned; otherwise, values containing
@@ -37,6 +37,7 @@ class ZhipuAIEmbeddings(BaseModel, Embeddings):
             ValueError: zhipuai package not found, please install it with `pip install
             zhipuai`
         """
+        # 从字典或者环境变量中找到对应kv
         values["zhipuai_api_key"] = get_from_dict_or_env(
             values,
             "zhipuai_api_key",
@@ -47,7 +48,7 @@ class ZhipuAIEmbeddings(BaseModel, Embeddings):
             import zhipuai
             zhipuai.api_key = values["zhipuai_api_key"]
             values["client"] = zhipuai.model_api
-
+        # import依赖不存在报错
         except ImportError:
             raise ValueError(
                 "Zhipuai package not found, please install it with "
@@ -55,6 +56,7 @@ class ZhipuAIEmbeddings(BaseModel, Embeddings):
             )
         return values
 
+    # 调用embedding模型获取文本向量信息
     def _embed(self, texts: str) -> List[float]:
         # send request
         try:
@@ -73,6 +75,7 @@ class ZhipuAIEmbeddings(BaseModel, Embeddings):
         embeddings = resp["data"]["embedding"]
         return embeddings
 
+    # 获取查询文本的向量信息
     def embed_query(self, text: str) -> List[float]:
         """
         Embedding a text.
@@ -88,6 +91,7 @@ class ZhipuAIEmbeddings(BaseModel, Embeddings):
         resp = self.embed_documents([text])
         return resp[0]
 
+    # 把文本列表转换成向量列表
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """
         Embeds a list of text documents.
@@ -101,6 +105,7 @@ class ZhipuAIEmbeddings(BaseModel, Embeddings):
         """
         return [self._embed(text) for text in texts]
 
+    # 异步embedding方法，直接不提供
     async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
         """Asynchronous Embed search docs."""
         raise NotImplementedError(

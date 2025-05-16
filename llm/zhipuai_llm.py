@@ -34,7 +34,7 @@ from llm.self_llm import Self_LLM
 
 logger = logging.getLogger(__name__)
 
-
+# 这个看着比较像正常的自定义LLM实现，可以参考
 class ZhipuAILLM(Self_LLM):
     """Zhipuai hosted open source or customized models.
 
@@ -76,8 +76,8 @@ class ZhipuAILLM(Self_LLM):
     temperature: Optional[float] = 0.95
     request_id: Optional[float] = None
 
-    @root_validator()
-    def validate_enviroment(cls, values: Dict) -> Dict:
+    @root_validator() # 在new实例的时候会对字段做校验，返回值必须为原字典或者错误
+    def validate_enviroment(cls, values: Dict) -> Dict: # cls是类方法的第一个参数，可以用于访问类的其他方法和属性
 
         values["zhipuai_api_key"] = get_from_dict_or_env(
             values,
@@ -101,7 +101,7 @@ class ZhipuAILLM(Self_LLM):
             )
         return values
 
-    @property
+    @property # 将方法转换为类的属性，可以像访问属性一样直接使用ZhipuAILLM._identifying_params
     def _identifying_params(self) -> Dict[str, Any]:
         return {
             **{"model": self.model},

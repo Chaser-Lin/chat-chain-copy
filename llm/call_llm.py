@@ -44,6 +44,7 @@ def get_completion(prompt :str, model :str, temperature=0.1,api_key=None, secret
     # max_tokens : 返回最长序列
     # return: 模型返回，字符串
     # 调用 GPT
+    # 根据不同模型名称调取对应模型获取GPT回复
     if model in ["gpt-3.5-turbo", "gpt-3.5-turbo-16k-0613", "gpt-3.5-turbo-0613", "gpt-4", "gpt-4-32k"]:
         return get_completion_gpt(prompt, model, temperature, api_key, max_tokens)
     elif model in ["ERNIE-Bot", "ERNIE-Bot-4", "ERNIE-Bot-turbo"]:
@@ -71,6 +72,9 @@ def get_completion_gpt(prompt : str, model : str, temperature : float, api_key:s
     # 调用 OpenAI 的 ChatCompletion 接口
     return response.choices[0].message["content"]
 
+# 百度文心模型需要先通过api_key和secret_key获取access_token才能调用api
+# wenxin_llm.py下有封装了模型的调用，为啥这样还要多写一遍？
+# 下面星火模型的调用也是一样
 def get_access_token(api_key, secret_key):
     """
     使用 API Key，Secret Key 获取access_token，替换下列示例中的应用API Key、应用Secret Key
@@ -153,7 +157,7 @@ def get_completion_glm(prompt : str, model : str, temperature : float, api_key:s
 
 # 星火 API 调用使用
 answer = ""
-
+# 星火模型调用整这么麻烦？
 class Ws_Param(object):
     # 初始化
     def __init__(self, APPID, APIKey, APISecret, Spark_url):
@@ -266,7 +270,7 @@ def gen_params(appid, domain,question, temperature, max_tokens):
     }
     return data
 
-
+# 使用websocket调用星火模型
 def spark_main(appid, api_key, api_secret, Spark_url,domain, question, temperature, max_tokens):
     # print("星火:")
     output_queue = queue.Queue()

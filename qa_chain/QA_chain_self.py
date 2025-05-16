@@ -48,7 +48,7 @@ class QA_chain_self():
         self.vectordb = get_vectordb(self.file_path, self.persist_path, self.embedding,self.embedding_key)
         self.llm = model_to_llm(self.model, self.temperature, self.appid, self.api_key, self.Spark_api_secret,self.Wenxin_secret_key)
 
-        self.QA_CHAIN_PROMPT = PromptTemplate(input_variables=["context","question"],
+        self.QA_CHAIN_PROMPT = PromptTemplate(input_variables=["context","question"], # context 是在哪里传的？
                                     template=self.template)
         self.retriever = self.vectordb.as_retriever(search_type="similarity",   
                                         search_kwargs={'k': self.top_k})  #默认similarity，k=4
